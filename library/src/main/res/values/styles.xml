@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="RollingStoneView">
+        <item name="stoneDrawable">@drawable/ic_round_stone</item>
+        <item name="stoneWidth">10dp</item>
+        <item name="stoneHeight">10dp</item>
+        <item name="stoneHorizontalSpacing">2dp</item>
+        <item name="stoneVerticalSpacing">2dp</item>
+        <item name="stoneFirstHalfDelay">50</item>
+        <item name="stoneSecondHalfDelay">100</item>
+        <item name="stoneFirstHalfDuration">500</item>
+        <item name="stoneSecondHalfDuration">500</item>
+    </style>
+</resources>

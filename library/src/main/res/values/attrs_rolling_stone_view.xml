@@ -1,8 +1,13 @@
 <resources>
     <declare-styleable name="RollingStoneView">
-        <attr name="exampleString" format="string"/>
-        <attr name="exampleDimension" format="dimension"/>
-        <attr name="exampleColor" format="color"/>
-        <attr name="exampleDrawable" format="color|reference"/>
+        <attr name="stoneDrawable" format="color|reference"/>
+        <attr name="stoneWidth" format="dimension"/>
+        <attr name="stoneHeight" format="dimension"/>
+        <attr name="stoneHorizontalSpacing" format="dimension"/>
+        <attr name="stoneVerticalSpacing" format="dimension"/>
+        <attr name="stoneFirstHalfDelay" format="integer"/>
+        <attr name="stoneFirstHalfDuration" format="integer"/>
+        <attr name="stoneSecondHalfDelay" format="integer"/>
+        <attr name="stoneSecondHalfDuration" format="integer"/>
     </declare-styleable>
 </resources>

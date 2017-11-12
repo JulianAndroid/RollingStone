@@ -3,187 +3,196 @@ package io.julian.rollingstone;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
-import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * TODO: document your custom view class.
+ * This is a loading view like rolling stones.
  */
 public class RollingStoneView extends View {
-    private String mExampleString; // TODO: use a default from R.string...
-    private int mExampleColor = Color.RED; // TODO: use a default from R.color...
-    private float mExampleDimension = 0; // TODO: use a default from R.dimen...
-    private Drawable mExampleDrawable;
+    private static final int MATRIX_ROW = 3;
+    private static final int MATRIX_COLUMN = 4;
 
-    private TextPaint mTextPaint;
-    private float mTextWidth;
-    private float mTextHeight;
+    private int mStoneWidth;
+    private int mStoneHeight;
+    private int mHorizontalSpacing;
+    private int mVerticalSpacing;
+
+    private Stone[] mStones;
+    private int mFirstHalfDelay;
+    private int mFirstHalfDuration;
+    private int mSecondHalfDelay;
+    private int mSecondHalfDuration;
 
     public RollingStoneView(Context context) {
-        super(context);
-        init(null, 0);
+        this(context, null);
     }
 
     public RollingStoneView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(attrs, 0);
+        this(context, attrs, 0);
     }
 
-    public RollingStoneView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        init(attrs, defStyle);
+    public RollingStoneView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init(attrs, defStyleAttr);
     }
 
     private void init(AttributeSet attrs, int defStyle) {
         // Load attributes
         final TypedArray a = getContext().obtainStyledAttributes(
-                attrs, R.styleable.RollingStoneView, defStyle, 0);
+                attrs, R.styleable.RollingStoneView, defStyle, R.style.RollingStoneView);
 
-        mExampleString = a.getString(
-                R.styleable.RollingStoneView_exampleString);
-        mExampleColor = a.getColor(
-                R.styleable.RollingStoneView_exampleColor,
-                mExampleColor);
+        mStoneWidth = a.getDimensionPixelOffset(
+                R.styleable.RollingStoneView_stoneWidth, 0);
+        mStoneHeight = a.getDimensionPixelOffset(
+                R.styleable.RollingStoneView_stoneHeight, 0);
         // Use getDimensionPixelSize or getDimensionPixelOffset when dealing with
         // values that should fall on pixel boundaries.
-        mExampleDimension = a.getDimension(
-                R.styleable.RollingStoneView_exampleDimension,
-                mExampleDimension);
+        mHorizontalSpacing = a.getDimensionPixelSize(
+                R.styleable.RollingStoneView_stoneHorizontalSpacing,
+                0);
+        mVerticalSpacing = a.getDimensionPixelOffset(
+                R.styleable.RollingStoneView_stoneVerticalSpacing,
+                0);
 
-        if (a.hasValue(R.styleable.RollingStoneView_exampleDrawable)) {
-            mExampleDrawable = a.getDrawable(
-                    R.styleable.RollingStoneView_exampleDrawable);
-            mExampleDrawable.setCallback(this);
+        mFirstHalfDelay = a.getInteger(R.styleable.RollingStoneView_stoneFirstHalfDelay, 0);
+        mFirstHalfDuration = a.getInteger(R.styleable.RollingStoneView_stoneFirstHalfDuration, 0);
+        mSecondHalfDelay = a.getInteger(R.styleable.RollingStoneView_stoneSecondHalfDelay, 0);
+        mSecondHalfDuration = a.getInteger(R.styleable.RollingStoneView_stoneSecondHalfDuration, 0);
+        mStones = new Stone[MATRIX_ROW * MATRIX_COLUMN];
+        for (int row = 0; row < MATRIX_ROW; row++) {
+            for (int column = 0; column < MATRIX_COLUMN; column++) {
+                Drawable drawable = a.getDrawable(R.styleable.RollingStoneView_stoneDrawable);
+                if (drawable == null) {
+                    throw new NullPointerException("Not found attr stoneDrawable");
+                }
+                mStones[row * MATRIX_COLUMN + column] = new Stone(this, drawable);
+            }
         }
 
         a.recycle();
 
-        // Set up a default TextPaint object
-        mTextPaint = new TextPaint();
-        mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-        mTextPaint.setTextAlign(Paint.Align.LEFT);
-
-        // Update TextPaint and text measurements from attributes
-        invalidateTextPaintAndMeasurements();
+        initStones();
     }
 
-    private void invalidateTextPaintAndMeasurements() {
-        mTextPaint.setTextSize(mExampleDimension);
-        mTextPaint.setColor(mExampleColor);
-        mTextWidth = mTextPaint.measureText(mExampleString);
+    private void initStones() {
+        mStones[8].setRollStyle(0, mFirstHalfDuration, 12 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[4].setRollStyle(mFirstHalfDelay, mFirstHalfDuration, 10 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[0].setRollStyle(2 * mFirstHalfDelay, mFirstHalfDuration, 11 * mSecondHalfDelay, mSecondHalfDuration);
 
-        Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-        mTextHeight = fontMetrics.bottom;
+        mStones[9].setRollStyle(3 * mFirstHalfDelay, mFirstHalfDuration, 9 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[5].setRollStyle(4 * mFirstHalfDelay, mFirstHalfDuration, 7 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[1].setRollStyle(5 * mFirstHalfDelay, mFirstHalfDuration, 8 * mSecondHalfDelay, mSecondHalfDuration);
+
+        mStones[10].setRollStyle(6 * mFirstHalfDelay, mFirstHalfDuration, 6 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[6].setRollStyle(7 * mFirstHalfDelay, mFirstHalfDuration, 4 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[2].setRollStyle(8 * mFirstHalfDelay, mFirstHalfDuration, 5 * mSecondHalfDelay, mSecondHalfDuration);
+
+        mStones[11].setRollStyle(9 * mFirstHalfDelay, mFirstHalfDuration, 3 * mSecondHalfDelay, mSecondHalfDuration);
+        mStones[7].setRollStyle(10 * mFirstHalfDelay, mFirstHalfDuration, mSecondHalfDelay, mSecondHalfDuration);
+        mStones[3].setRollStyle(11 * mFirstHalfDelay, mFirstHalfDuration, 2 * mSecondHalfDelay, mSecondHalfDuration);
+
+        mStones[3].setOnStoneListener(new Stone.OnStoneListener() {
+            @Override
+            public void onFirstHalfEnd() {
+                for (Stone stone : mStones) {
+                    stone.startSecondHalf();
+                }
+            }
+
+            @Override
+            public void onSecondHalfEnd() {
+
+            }
+        });
+        mStones[8].setOnStoneListener(new Stone.OnStoneListener() {
+            @Override
+            public void onFirstHalfEnd() {
+
+            }
+
+            @Override
+            public void onSecondHalfEnd() {
+                for (Stone stone : mStones) {
+                    stone.startFirstHalf();
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        final int paddingLeft = getPaddingLeft();
+        final int paddingTop = getPaddingTop();
+        final int paddingRight = getPaddingRight();
+        final int paddingBottom = getPaddingBottom();
+
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final int widthSize;
+        if (widthMode == MeasureSpec.AT_MOST) {
+            widthSize = (MATRIX_COLUMN + 1) * mStoneWidth + (MATRIX_COLUMN - 1) * mHorizontalSpacing
+                    + paddingLeft + paddingRight;
+        } else {
+            widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        }
+
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        final int heightSize;
+        if (heightMode == MeasureSpec.AT_MOST) {
+            heightSize = (MATRIX_ROW + 1) * mStoneHeight + (MATRIX_ROW - 1) * mVerticalSpacing
+                    + paddingTop + paddingBottom;
+        } else {
+            heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        }
+
+        measureStones();
+
+        setMeasuredDimension(widthSize, heightSize);
+    }
+
+    private void measureStones() {
+        for (int row = 0; row < MATRIX_ROW; row++) {
+            for (int column = 0; column < MATRIX_COLUMN; column++) {
+                int stoneLeft = (column + 1) * mStoneWidth + column * mHorizontalSpacing;
+                int stoneTop = (row + 1) * mStoneHeight + row * mVerticalSpacing;
+                int stoneRight = stoneLeft + mStoneWidth;
+                int stoneBottom = stoneTop + mStoneHeight;
+
+                mStones[row * MATRIX_COLUMN + column].setBounds(stoneLeft, stoneTop, stoneRight,
+                        stoneBottom);
+            }
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // TODO: consider storing these as member variables to reduce
-        // allocations per draw cycle.
-        int paddingLeft = getPaddingLeft();
-        int paddingTop = getPaddingTop();
-        int paddingRight = getPaddingRight();
-        int paddingBottom = getPaddingBottom();
-
-        int contentWidth = getWidth() - paddingLeft - paddingRight;
-        int contentHeight = getHeight() - paddingTop - paddingBottom;
-
-        // Draw the text.
-        canvas.drawText(mExampleString,
-                paddingLeft + (contentWidth - mTextWidth) / 2,
-                paddingTop + (contentHeight + mTextHeight) / 2,
-                mTextPaint);
-
-        // Draw the example drawable on top of the text.
-        if (mExampleDrawable != null) {
-            mExampleDrawable.setBounds(paddingLeft, paddingTop,
-                    paddingLeft + contentWidth, paddingTop + contentHeight);
-            mExampleDrawable.draw(canvas);
+        for (Stone stone : mStones) {
+            stone.draw(canvas);
         }
     }
 
-    /**
-     * Gets the example string attribute value.
-     *
-     * @return The example string attribute value.
-     */
-    public String getExampleString() {
-        return mExampleString;
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (hasWindowFocus) {
+            startAnimation();
+        } else {
+            stopAnimation();
+        }
     }
 
-    /**
-     * Sets the view's example string attribute value. In the example view, this string
-     * is the text to draw.
-     *
-     * @param exampleString The example string attribute value to use.
-     */
-    public void setExampleString(String exampleString) {
-        mExampleString = exampleString;
-        invalidateTextPaintAndMeasurements();
+    private void startAnimation() {
+        for (Stone stone : mStones) {
+            stone.startAnimation();
+        }
     }
 
-    /**
-     * Gets the example color attribute value.
-     *
-     * @return The example color attribute value.
-     */
-    public int getExampleColor() {
-        return mExampleColor;
-    }
-
-    /**
-     * Sets the view's example color attribute value. In the example view, this color
-     * is the font color.
-     *
-     * @param exampleColor The example color attribute value to use.
-     */
-    public void setExampleColor(int exampleColor) {
-        mExampleColor = exampleColor;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example dimension attribute value.
-     *
-     * @return The example dimension attribute value.
-     */
-    public float getExampleDimension() {
-        return mExampleDimension;
-    }
-
-    /**
-     * Sets the view's example dimension attribute value. In the example view, this dimension
-     * is the font size.
-     *
-     * @param exampleDimension The example dimension attribute value to use.
-     */
-    public void setExampleDimension(float exampleDimension) {
-        mExampleDimension = exampleDimension;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example drawable attribute value.
-     *
-     * @return The example drawable attribute value.
-     */
-    public Drawable getExampleDrawable() {
-        return mExampleDrawable;
-    }
-
-    /**
-     * Sets the view's example drawable attribute value. In the example view, this drawable is
-     * drawn above the text.
-     *
-     * @param exampleDrawable The example drawable attribute value to use.
-     */
-    public void setExampleDrawable(Drawable exampleDrawable) {
-        mExampleDrawable = exampleDrawable;
+    private void stopAnimation() {
+        for (Stone stone : mStones) {
+            stone.stopAnimation();
+        }
     }
 }
